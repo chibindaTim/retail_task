@@ -1,5 +1,12 @@
-# Data files
-data/
+# Data files - teammate will download separately
+data/*.csv
+data/*.json
+data/*.xlsx
+data/*.txt
+# But allow data directory structure
+!data/
+!data/README.md
+!data/.gitkeep
 
 # Python cache
 __pycache__/
