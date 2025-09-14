@@ -1,16 +1,17 @@
 Model Evaluation:
 ------------------------------
 ridge_regression:
-  MSE:  20001.0515
-  RMSE: 141.4251
-  R²:   -0.0003
+  MSE:  19997.4922
+  RMSE: 141.4125
+  R²:   -0.0001
 
 lasso_regression:
-  MSE:  19998.9334
-  RMSE: 141.4176
-  R²:   -0.0002
-
-Final Model Performance on Validation Set:
-MSE: 19998.93
-RMSE: 141.42
-R² Score: -0.00
+  MSE:  20006.1895
+  RMSE: 141.4432
+  R²:   -0.0005
+  
+Prediction Statistics:
+MSE: 71021.68
+RMSE: 266.50
+MAE: 225.15
+R² Score: -2.5497
