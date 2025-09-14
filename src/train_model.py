@@ -86,7 +86,7 @@ class RidgeRegression:
         return np.dot(X, self.weights) + self.bias
 
 
-def custom_train_test_split(X, y, test_size=0.2, random_state=None):
+def custom_train_test_split(X, y, test_size=0.5, random_state=42):
     """Custom implementation of train-test split"""
     if random_state is not None:
         np.random.seed(random_state)
@@ -121,7 +121,7 @@ def load_data(filepath):
 
 def standardize_features(X):
     """Standardize features to have mean 0 and std 1"""
-    X = np.array(X, dtype=np.float64)  # ensure numeric array
+    X = np.array(X, dtype=np.float32)  # ensure numeric array
     mean = np.mean(X, axis=0)
     std = np.std(X, axis=0)
     
@@ -227,20 +227,20 @@ def main():
     try:
         # Load data
         print("Loading data...")
-        data_path = 'data/Laptop Price - Laptop Price.csv'
+        data_path = 'data\Retail.csv'
         df = load_data(data_path)
         print(f"Data loaded: {df.shape}")
-        
+        target= 'avg_purchase_value'
         # Preprocess data
         print("Preprocessing data...")
         preprocessor = Preprocessor()
-        X, y= preprocessor.fit_transform(df, 'Price')
+        X, y= preprocessor.fit_transform(df, target)
         print(f"Preprocessed data shape: X={X.shape}, y={y.shape}")
         
         # Split data (80% train, 20% validation)
         print("Splitting data...")
         X_train, X_val, y_train, y_val = custom_train_test_split(
-            X, y, test_size=0.2, random_state=42
+            X, y, test_size=0.5, random_state=42
         )
         print(f"Train set: {X_train.shape}, Validation set: {X_val.shape}")
         
@@ -256,11 +256,25 @@ def main():
         # Evaluate models on validation set
         best_model, best_model_name = evaluate_models(models, X_val_scaled, y_val)
         
+        print(f"\nSkipping full dataset retraining due to memory constraints.")
+        print(f"Using {best_model_name} trained on {len(X_train)} samples.")
         # Retrain best model on full dataset
-        print(f"Retraining {best_model_name} on full dataset...")
-        X_full_scaled, _, _ = standardize_features(X)
-        best_model.fit(X_full_scaled, y)
+        #print(f"Retraining {best_model_name} on full dataset...")
+        #X_full_scaled, _, _ = standardize_features(X)
+        #best_model.fit(X_full_scaled, y)
         
+        # Evaluate final model on validation set for reporting
+        final_pred = best_model.predict(X_val_scaled)
+        final_mse = np.mean((y_val - final_pred)**2)
+        final_rmse = np.sqrt(final_mse)
+        ss_res = np.sum((y_val - final_pred) ** 2)
+        ss_tot = np.sum((y_val - np.mean(y_val)) ** 2)
+        final_r2 = 1 - (ss_res / ss_tot)
+        
+        print(f"\nFinal Model Performance on Validation Set:")
+        print(f"MSE: {final_mse:.2f}")
+        print(f"RMSE: {final_rmse:.2f}")
+        print(f"R² Score: {final_r2:.2f}")
         # Save models and preprocessor
         print("\nSaving models...")
 
@@ -285,12 +299,8 @@ def main():
         
         print("\n" + "=" * 50)
         print("Training pipeline completed successfully!")
-        
-        # Show some final statistics
-        final_pred = best_model.predict(X_full_scaled)
-        final_mse = np.mean((y - final_pred)**2)
-        print(f"Final model MSE on full dataset: {final_mse:.4f}")
-        
+        print(f"Training completed successfully with {best_model_name} as the best performing model.")
+
     except Exception as e:
         print(f"Error in training pipeline: {str(e)}")
         raise
