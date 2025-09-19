@@ -72,11 +72,9 @@ def main():
 
     # Drop rows with missing target (consistent with training)
     df = df.dropna(subset=[args.target_col]).reset_index(drop=True)
-    y_true = df[args.target_col].astype(float).values
-    X_df = df.drop(columns=[args.target_col])
-
-    # Preprocess features
-    X = preproc.transform(X_df)
+    
+    # Preprocess features (returns X and y)
+    X, y_true = preproc.transform(df, args.target_col)
 
     # Align features with standardization params if feature_columns were saved
     if feature_columns is not None:

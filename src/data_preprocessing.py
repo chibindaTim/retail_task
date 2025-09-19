@@ -8,7 +8,7 @@ from typing import Tuple, Dict
 
 
 class Preprocessor:
-    """Data preprocessor for retail customer data."""
+    """Data preprocessor for retail regression data (avg_purchase_value prediction)."""
     
     def __init__(self, top_k: int = 10):
         self.top_k = top_k
@@ -16,9 +16,23 @@ class Preprocessor:
         self.categorical_encodings = {}
         self.numerical_stats = {}
         
-    def fit_transform(self, df: pd.DataFrame, target_col=None) -> pd.DataFrame:
-        """Fit preprocessor and transform data."""
+    def fit_transform(self, df: pd.DataFrame, target_col='avg_purchase_value') -> Tuple[pd.DataFrame, pd.Series]:
+        """Fit preprocessor and transform data for regression."""
         df = df.copy()
+        
+        # Remove target from features and extract it
+        if target_col in df.columns:
+            y = df[target_col].copy()
+            df = df.drop(columns=[target_col])
+        else:
+            raise ValueError(f"Target column '{target_col}' not found in dataset")
+        
+        # Remove other potential target-like columns to avoid data leakage
+        leakage_cols = ['churned', 'transaction_id', 'customer_zip_code', 'store_zip_code']
+        existing_leakage = [col for col in leakage_cols if col in df.columns]
+        if existing_leakage:
+            df = df.drop(columns=existing_leakage)
+            print(f"Removed potential data leakage columns: {existing_leakage}")
         
         # Identify column types
         numerical_cols = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -51,11 +65,24 @@ class Preprocessor:
         # Store feature columns
         self.feature_columns = df.columns.tolist()
         
-        return df
+        return df, y
     
-    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame, target_col='avg_purchase_value') -> Tuple[pd.DataFrame, pd.Series]:
         """Transform new data using fitted parameters."""
         df = df.copy()
+        
+        # Extract target if present
+        if target_col in df.columns:
+            y = df[target_col].copy()
+            df = df.drop(columns=[target_col])
+        else:
+            y = None
+        
+        # Remove potential leakage columns
+        leakage_cols = ['churned', 'transaction_id', 'customer_zip_code', 'store_zip_code']
+        existing_leakage = [col for col in leakage_cols if col in df.columns]
+        if existing_leakage:
+            df = df.drop(columns=existing_leakage)
         
         # Handle missing values using stored stats
         for col, stats in self.numerical_stats.items():
@@ -82,7 +109,7 @@ class Preprocessor:
             # Remove extra columns and reorder
             df = df[self.feature_columns]
         
-        return df
+        return df, y
     
     def save_state(self) -> dict:
         """Save preprocessor state for later loading."""
